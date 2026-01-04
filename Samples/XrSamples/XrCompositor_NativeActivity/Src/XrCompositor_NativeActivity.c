@@ -2359,6 +2359,7 @@ static void ovrApp_HandleSessionStateChanges(ovrApp* app, XrSessionState state) 
 
         // Set session state once we have entered VR mode and have a valid session object.
         if (app->SessionActive) {
+            /* Commented out XR_EXT_performance_settings related code
             XrPerfSettingsLevelEXT cpuPerfLevel = XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
             switch (app->CpuLevel) {
                 case 0:
@@ -2407,6 +2408,7 @@ static void ovrApp_HandleSessionStateChanges(ovrApp* app, XrSessionState state) 
                 app->Session, XR_PERF_SETTINGS_DOMAIN_CPU_EXT, cpuPerfLevel));
             OXR(pfnPerfSettingsSetPerformanceLevelEXT(
                 app->Session, XR_PERF_SETTINGS_DOMAIN_GPU_EXT, gpuPerfLevel));
+            */
 
             PFN_xrSetAndroidApplicationThreadKHR pfnSetAndroidApplicationThreadKHR = NULL;
             OXR(xrGetInstanceProcAddr(
@@ -2456,6 +2458,7 @@ static void ovrApp_HandleXrEvents(ovrApp* app) {
             case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
                 ALOGV("xrPollEvent: received XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED event");
                 break;
+            /* Commented out XR_EXT_performance_settings event handling
             case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
                 const XrEventDataPerfSettingsEXT* perf_settings_event =
                     (XrEventDataPerfSettingsEXT*)(baseEventHeader);
@@ -2466,6 +2469,7 @@ static void ovrApp_HandleXrEvents(ovrApp* app) {
                     perf_settings_event->fromLevel,
                     perf_settings_event->toLevel);
             } break;
+            */
             case XR_TYPE_EVENT_DATA_DISPLAY_REFRESH_RATE_CHANGED_FB: {
                 const XrEventDataDisplayRefreshRateChangedFB* refresh_rate_changed_event =
                     (XrEventDataDisplayRefreshRateChangedFB*)(baseEventHeader);
@@ -2766,17 +2770,19 @@ void android_main(struct android_app* app) {
     // Check that the extensions required are present.
     const char* const requiredExtensionNames[] = {
         XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME,
-        XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME,
+        /* XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME, */  // Commented out
         XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME,
-        XR_KHR_COMPOSITION_LAYER_CUBE_EXTENSION_NAME,
+//        XR_KHR_COMPOSITION_LAYER_CUBE_EXTENSION_NAME,
         XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME,
         XR_KHR_COMPOSITION_LAYER_EQUIRECT2_EXTENSION_NAME,
-        XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME,
-        XR_FB_COLOR_SPACE_EXTENSION_NAME,
-        XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
-        XR_FB_SWAPCHAIN_UPDATE_STATE_OPENGL_ES_EXTENSION_NAME,
-        XR_FB_FOVEATION_EXTENSION_NAME,
-        XR_FB_FOVEATION_CONFIGURATION_EXTENSION_NAME};
+//        XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME,
+//        XR_FB_COLOR_SPACE_EXTENSION_NAME,
+//        XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
+//        XR_FB_SWAPCHAIN_UPDATE_STATE_OPENGL_ES_EXTENSION_NAME,
+//        XR_FB_FOVEATION_EXTENSION_NAME,
+//        XR_FB_FOVEATION_CONFIGURATION_EXTENSION_NAME,
+        XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME
+    };
     const uint32_t numRequiredExtensions =
         sizeof(requiredExtensionNames) / sizeof(requiredExtensionNames[0]);
 
@@ -2828,6 +2834,14 @@ void android_main(struct android_app* app) {
     appInfo.engineVersion = 0;
     appInfo.apiVersion = XR_API_VERSION_1_0;
 
+    XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroidKHR;
+    instanceCreateInfoAndroidKHR.type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR;
+    instanceCreateInfoAndroidKHR.next = NULL;
+    instanceCreateInfoAndroidKHR.applicationVM = (void *)app->activity->vm;
+    instanceCreateInfoAndroidKHR.applicationActivity =
+            (void *)app->activity->clazz;
+    const void* nextChain = &instanceCreateInfoAndroidKHR;//GetInstanceCreateInfoNextChain();
+
     XrInstanceCreateInfo instanceCreateInfo = {XR_TYPE_INSTANCE_CREATE_INFO};
     instanceCreateInfo.createFlags = 0;
     instanceCreateInfo.applicationInfo = appInfo;
@@ -2835,6 +2849,7 @@ void android_main(struct android_app* app) {
     instanceCreateInfo.enabledApiLayerNames = NULL;
     instanceCreateInfo.enabledExtensionCount = numRequiredExtensions;
     instanceCreateInfo.enabledExtensionNames = requiredExtensionNames;
+    instanceCreateInfo.next = nextChain;
 
     XrResult initResult;
     OXR(initResult = xrCreateInstance(&instanceCreateInfo, &appState.Instance));
@@ -3038,7 +3053,7 @@ void android_main(struct android_app* app) {
         appState.Instance, appState.SystemId, supportedViewConfigType, &appState.ViewportConfig));
 
     // Enumerate the supported color space options for the system.
-    {
+    if (0){
         PFN_xrEnumerateColorSpacesFB pfnxrEnumerateColorSpacesFB = NULL;
         OXR(xrGetInstanceProcAddr(
             appState.Instance,
@@ -3071,7 +3086,7 @@ void android_main(struct android_app* app) {
     }
 
     // Get the supported display refresh rates for the system.
-    {
+    if (0){
         PFN_xrEnumerateDisplayRefreshRatesFB pfnxrEnumerateDisplayRefreshRatesFB = NULL;
         OXR(xrGetInstanceProcAddr(
             appState.Instance,
@@ -3451,13 +3466,13 @@ void android_main(struct android_app* app) {
         appState.ViewConfigurationView[0].recommendedImageRectWidth,
         appState.ViewConfigurationView[0].recommendedImageRectHeight);
 
-    ovrRenderer_SetFoveation(
-        &appState.Instance,
-        &appState.Session,
-        &appState.Renderer,
-        XR_FOVEATION_LEVEL_HIGH_FB,
-        0,
-        XR_FOVEATION_DYNAMIC_DISABLED_FB);
+//    ovrRenderer_SetFoveation(
+//        &appState.Instance,
+//        &appState.Session,
+//        &appState.Renderer,
+//        XR_FOVEATION_LEVEL_HIGH_FB,
+//        0,
+//        XR_FOVEATION_DYNAMIC_DISABLED_FB);
 
     app->userData = &appState;
     app->onAppCmd = app_handle_cmd;
