@@ -142,6 +142,7 @@ void XrApp::HandleSessionStateChanges(XrSessionState state) {
         // Set session state once we have entered VR mode and have a valid session object.
         if (SessionActive) {
 #if defined(ANDROID)
+            /* Commented out XR_EXT_performance_settings related code
             XrPerfSettingsLevelEXT cpuPerfLevel = XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
             switch (CpuLevel) {
                 case 0:
@@ -191,6 +192,7 @@ void XrApp::HandleSessionStateChanges(XrSessionState state) {
                 Session, XR_PERF_SETTINGS_DOMAIN_CPU_EXT, cpuPerfLevel));
             OXR(pfnPerfSettingsSetPerformanceLevelEXT(
                 Session, XR_PERF_SETTINGS_DOMAIN_GPU_EXT, gpuPerfLevel));
+            */
 
             PFN_xrSetAndroidApplicationThreadKHR pfnSetAndroidApplicationThreadKHR = nullptr;
             OXR(xrGetInstanceProcAddr(
@@ -245,6 +247,7 @@ void XrApp::HandleXrEvents() {
             case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
                 ALOGV("xrPollEvent: received XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED event");
                 break;
+            /* Commented out XR_EXT_performance_settings event handling
             case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
                 const XrEventDataPerfSettingsEXT* perf_settings_event =
                     (XrEventDataPerfSettingsEXT*)(baseEventHeader);
@@ -255,6 +258,7 @@ void XrApp::HandleXrEvents() {
                     perf_settings_event->fromLevel,
                     perf_settings_event->toLevel);
             } break;
+            */
             case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
                 ALOGV(
                     "xrPollEvent: received XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING event");
@@ -401,7 +405,8 @@ std::vector<const char*> XrApp::GetExtensions() {
 #endif // defined(XR_USE_GRAPHICS_API_OPENGL_ES)
         XR_KHR_COMPOSITION_LAYER_COLOR_SCALE_BIAS_EXTENSION_NAME,
 #if defined(XR_USE_PLATFORM_ANDROID)
-        XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME,
+        /* XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME, */  // Commented out
+        XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
         XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME,
 #endif // defined(XR_USE_PLATFORM_ANDROID)
         XR_KHR_COMPOSITION_LAYER_CUBE_EXTENSION_NAME,
@@ -675,9 +680,16 @@ XrInstance XrApp::CreateInstance(const xrJava& context) {
     appInfo.engineVersion = 0;
     appInfo.apiVersion = OpenXRVersion;
 
-    const void* nextChain = GetInstanceCreateInfoNextChain();
+//    const void* nextChain = GetInstanceCreateInfoNextChain();
 
     XrInstanceCreateInfo instanceCreateInfo = {XR_TYPE_INSTANCE_CREATE_INFO};
+    XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroidKHR;
+    instanceCreateInfoAndroidKHR.type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR;
+    instanceCreateInfoAndroidKHR.next = nullptr;
+    instanceCreateInfoAndroidKHR.applicationVM = (void *)context.Vm;
+    instanceCreateInfoAndroidKHR.applicationActivity =
+            (void *)context.ActivityObject;
+    const void* nextChain = &instanceCreateInfoAndroidKHR;//GetInstanceCreateInfoNextChain();
     instanceCreateInfo.next = nextChain;
     instanceCreateInfo.createFlags = 0;
     instanceCreateInfo.applicationInfo = appInfo;
@@ -1641,7 +1653,8 @@ void XrApp::MainLoop(MainLoopContext& loopContext) {
 
         XrFrameEndInfo endFrameInfo = {XR_TYPE_FRAME_END_INFO};
         endFrameInfo.displayTime = frameState.predictedDisplayTime;
-        endFrameInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+//        endFrameInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+        endFrameInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
         endFrameInfo.layerCount = LayerCount;
         endFrameInfo.layers = layers;
         PreEndFrame(endFrameInfo);
