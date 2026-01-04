@@ -133,8 +133,8 @@ class XrHandHelper : public XrHelper {
             /// aim
             aimState_.next = nullptr;
             /// BEGIN_SDK_REMOVE
-            wideMotionModeSource_.next = nullptr;
-            aimState_.next = &wideMotionModeSource_;
+//            wideMotionModeSource_.next = nullptr;
+//            aimState_.next = &wideMotionModeSource_;
             /// END_SDK_REMOVE
             /// scale
             scale_.next = &aimState_;
