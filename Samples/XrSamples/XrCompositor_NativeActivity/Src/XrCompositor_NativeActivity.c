@@ -392,7 +392,7 @@ static void ovrEgl_CreateContext(ovrEgl* egl, const ovrEgl* shareEgl) {
                 }
             }
             if (configAttribs[attempt][j] == EGL_NONE) {
-                ALOGD("        Successfully picked EGL config %d!", i);
+                ALOGD("        Successfully picked EGL config %d %d!", i, attempt);
                 egl->Config = configs[i];
                 break;
             }
@@ -2735,6 +2735,9 @@ void android_main(struct android_app* app) {
 
     ovrApp_Clear(&appState);
 
+    app->userData = &appState;
+    app->onAppCmd = app_handle_cmd;
+
     PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR;
     xrGetInstanceProcAddr(
         XR_NULL_HANDLE, "xrInitializeLoaderKHR", (PFN_xrVoidFunction*)&xrInitializeLoaderKHR);
@@ -3473,9 +3476,6 @@ void android_main(struct android_app* app) {
 //        XR_FOVEATION_LEVEL_HIGH_FB,
 //        0,
 //        XR_FOVEATION_DYNAMIC_DISABLED_FB);
-
-    app->userData = &appState;
-    app->onAppCmd = app_handle_cmd;
 
     bool stageBoundsDirty = true;
 
