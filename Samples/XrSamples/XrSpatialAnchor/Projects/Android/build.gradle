@@ -23,7 +23,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:7.0.3"
+        classpath "com.android.tools.build:gradle:8.3.0"
     }
 }
 
@@ -35,6 +35,7 @@ repositories {
 apply plugin: 'com.android.application'
 
 android {
+  namespace "com.oculus.sdk.spatialanchor"
   compileSdk 32
 
   defaultConfig {
